@@ -9,6 +9,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WinDesktopAppOnCloud.Pages
@@ -23,79 +24,63 @@ namespace WinDesktopAppOnCloud.Pages
             _logger = logger;
         }
 
+        private bool PrevInstance()
+        {
+            var processes = Process.GetProcessesByName("boilersGraphics");
+            if (processes.Length >= 1)
+                return true;
+            else
+                return false;
+        }
+
         public void OnGet()
         {
-            string mutexName = "MyApplicationName";
-            System.Threading.Mutex mutex = new System.Threading.Mutex(false, mutexName);
-
-            bool hasHandle = false;
-            try
+            if (PrevInstance() == false)
             {
-                try
-                {
-                    //ミューテックスの所有権を要求する
-                    hasHandle = mutex.WaitOne(0, false);
-
-                    var app = new ProcessStartInfo();
-                    app.FileName = @"Z:\Git\boilersGraphics\boilersGraphics\bin\Debug\boilersGraphics.exe";
-                    _process = Process.Start(app);
-                }
-                //.NET Framework 2.0以降の場合
-                catch (System.Threading.AbandonedMutexException)
-                {
-                    //別のアプリケーションがミューテックスを解放しないで終了した時
-                    hasHandle = true;
-                }
-                //ミューテックスを得られたか調べる
-                if (hasHandle == false)
-                {
-                    //得られなかった場合は、すでに起動していると判断して終了
-                    return;
-                }
-
-                IntPtr hWnd = _process.MainWindowHandle;
-                while (hWnd == IntPtr.Zero)
-                {
-                    _process.Refresh();
-                    hWnd = _process.MainWindowHandle;
-                }
-                IntPtr winDC = GetWindowDC(hWnd);
-                //ウィンドウの大きさを取得
-                RECT winRect = new RECT();
-                GetWindowRect(hWnd, ref winRect);
-                //Bitmapの作成
-                Bitmap bmp = new Bitmap(winRect.right - winRect.left,
-                    winRect.bottom - winRect.top);
-                //Graphicsの作成
-                Graphics g = Graphics.FromImage(bmp);
-                //Graphicsのデバイスコンテキストを取得
-                IntPtr hDC = g.GetHdc();
-
-                PrintWindow(hWnd, hDC, 0);
-                //Bitmapに画像をコピーする
-                BitBlt(hDC, 0, 0, bmp.Width, bmp.Height,
-                    winDC, 0, 0, SRCCOPY);
-                //解放
-                g.ReleaseHdc(hDC);
-                g.Dispose();
-                ReleaseDC(hWnd, winDC);
-
-                MemoryStream ms = new MemoryStream();
-                bmp.Save(ms, ImageFormat.Png);
-                var array = ms.ToArray();
-                ms.Close();
-
-                ViewData["ImgSrc"] = String.Format("data:image/png;base64,{0}", Convert.ToBase64String(array));
+                var app = new ProcessStartInfo();
+                app.FileName = @"Z:\Git\boilersGraphics\boilersGraphics\bin\Debug\boilersGraphics.exe";
+                _process = Process.Start(app);
+                Thread.Sleep(1000);
             }
-            finally
+
+            if (_process == null)
             {
-                if (hasHandle)
-                {
-                    //ミューテックスを解放する
-                    mutex.ReleaseMutex();
-                }
-                mutex.Close();
+                _process = Process.GetProcessesByName("boilersGraphics").First();
             }
+
+            IntPtr hWnd = _process.MainWindowHandle;
+            while (hWnd == IntPtr.Zero)
+            {
+                _process.Refresh();
+                hWnd = _process.MainWindowHandle;
+            }
+            IntPtr winDC = GetWindowDC(hWnd);
+            //ウィンドウの大きさを取得
+            RECT winRect = new RECT();
+            GetWindowRect(hWnd, ref winRect);
+            //Bitmapの作成
+            Bitmap bmp = new Bitmap(winRect.right - winRect.left,
+                winRect.bottom - winRect.top);
+            //Graphicsの作成
+            Graphics g = Graphics.FromImage(bmp);
+            //Graphicsのデバイスコンテキストを取得
+            IntPtr hDC = g.GetHdc();
+
+            PrintWindow(hWnd, hDC, 0);
+            //Bitmapに画像をコピーする
+            BitBlt(hDC, 0, 0, bmp.Width, bmp.Height,
+                winDC, 0, 0, SRCCOPY);
+            //解放
+            g.ReleaseHdc(hDC);
+            g.Dispose();
+            ReleaseDC(hWnd, winDC);
+
+            MemoryStream ms = new MemoryStream();
+            bmp.Save(ms, ImageFormat.Png);
+            var array = ms.ToArray();
+            ms.Close();
+
+            ViewData["ImgSrc"] = String.Format("data:image/png;base64,{0}", Convert.ToBase64String(array));
         }
 
         private const int SRCCOPY = 13369376;
