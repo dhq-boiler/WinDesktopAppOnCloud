@@ -76,11 +76,11 @@ namespace WinDesktopAppOnCloud.Pages
             ReleaseDC(hWnd, winDC);
 
             MemoryStream ms = new MemoryStream();
-            bmp.Save(ms, ImageFormat.Png);
+            bmp.Save(ms, ImageFormat.Jpeg);
             var array = ms.ToArray();
             ms.Close();
 
-            ViewData["ImgSrc"] = String.Format("data:image/png;base64,{0}", Convert.ToBase64String(array));
+            ViewData["ImgSrc"] = String.Format("data:image/jpeg;base64,{0}", Convert.ToBase64String(array));
         }
 
         private const int SRCCOPY = 13369376;
