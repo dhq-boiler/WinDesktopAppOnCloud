@@ -1,0 +1,12 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <a href="" data-ajax="true" data-ajax-url="/index/partial" data-ajax-update="#panel">Click here</a>
+    <div id="panel">
+        <img src="@ViewData["ImgSrc"]" />
+    </div>
+</div>
