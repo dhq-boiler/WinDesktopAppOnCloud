@@ -4,9 +4,29 @@
     ViewData["Title"] = "Home page";
 }
 
+<script type="text/javascript">
+    window.onload = function () {
+        $('#appFace').on('mousemove', function (e) {
+            var mX = e.pageX;
+            var mY = e.pageY;
+            $.ajax({
+                type: "POST",
+                url: "/",
+                cache: false,
+                dataType: "json",
+                data: { x: mX, y: mY },
+                async: false,
+                success: function (data) {
+                    console.log("success");
+                }
+            });
+        });
+    }
+</script>
+
 <div class="text-center">
     <a href="" data-ajax="true" data-ajax-url="/index/partial" data-ajax-update="#panel">Click here</a>
     <div id="panel">
-        <img src="@ViewData["ImgSrc"]" />
+        <img id="appFace" src="@ViewData["ImgSrc"]" />
     </div>
 </div>

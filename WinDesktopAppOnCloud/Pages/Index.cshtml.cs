@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -35,10 +36,15 @@ namespace WinDesktopAppOnCloud.Pages
 
         public void OnGet()
         {
+            StartDesktopAppProcessAndPrintScreen();
+        }
+
+        private void StartDesktopAppProcessAndPrintScreen()
+        {
             if (PrevInstance() == false)
             {
                 var app = new ProcessStartInfo();
-                app.FileName = @"Z:\Git\boilersGraphics\boilersGraphics\bin\Debug\boilersGraphics.exe";
+                app.FileName = @"Z:\Git\boilersGraphics\boilersGraphics\bin\Debug\boilersGraphics.exe"; //将来的にはビルドシステムも搭載して、GitHubからソースコードをクローンして自鯖でビルドしてオンラインデバッグできるようにする
                 _process = Process.Start(app);
                 Thread.Sleep(1000);
             }
@@ -83,6 +89,27 @@ namespace WinDesktopAppOnCloud.Pages
             ViewData["ImgSrc"] = String.Format("data:image/jpeg;base64,{0}", Convert.ToBase64String(array));
         }
 
+        public void OnPost()
+        {
+            //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
+            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, PointToParam(JsonToPoint()));
+        }
+
+        private uint PointToParam(Point point)
+        {
+            return (uint)((int)point.X << 8 & (int)point.Y);
+        }
+
+        private Point JsonToPoint()
+        {
+            StreamReader reader = new StreamReader(Response.Body);
+            var obj = JsonConvert.DeserializeObject(reader.ReadToEnd());
+            var point = new Point();
+            //TODO point.X = obj.X;
+            //TODO point.Y = obj.Y;
+            return point;
+        }
+
         private const int SRCCOPY = 13369376;
         private const int CAPTUREBLT = 1073741824;
 
@@ -125,5 +152,14 @@ namespace WinDesktopAppOnCloud.Pages
         
         [DllImport("User32.dll")]
         private extern static bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
+
+        //送信するためのメソッド(文字も可能)
+        [DllImport("User32.dll", EntryPoint = "SendMessage")]
+        public static extern long SendMessage(IntPtr hWnd, uint Msg, uint wParam, uint lParam);
+
+        public const int WM_MOUSEMOVE = 0x0200;
+        public const int WM_LBUTTONDOWN = 0x201;
+        public const int WM_LBUTTONUP = 0x202;
+        public const int MK_LBUTTON = 0x0001;
     }
 }
