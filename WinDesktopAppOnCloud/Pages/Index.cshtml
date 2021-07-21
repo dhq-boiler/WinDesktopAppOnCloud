@@ -16,6 +16,9 @@
                 dataType: "json",
                 data: { x: mX, y: mY },
                 async: false,
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+                },
                 success: function (data) {
                     console.log("success");
                 }
@@ -24,6 +27,7 @@
     }
 </script>
 
+@Html.AntiForgeryToken()
 <div class="text-center">
     <a href="" data-ajax="true" data-ajax-url="/index/partial" data-ajax-update="#panel">Click here</a>
     <div id="panel">
