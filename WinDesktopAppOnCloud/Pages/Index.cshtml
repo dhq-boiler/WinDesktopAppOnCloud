@@ -24,13 +24,47 @@
                 }
             });
         });
+        $('#appFace').hover(
+            function (e) {
+                $.ajax({
+                    type: "POST",
+                    url: "/?handler=SetCapture",
+                    cache: false,
+                    dataType: "json",
+                    data: { },
+                    async: false,
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+                    },
+                    success: function (data) {
+                        console.log("success");
+                    }
+                });
+            },
+            function (e) {
+                $.ajax({
+                    type: "POST",
+                    url: "/?handler=ReleaseCapture",
+                    cache: false,
+                    dataType: "json",
+                    data: { },
+                    async: false,
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+                    },
+                    success: function (data) {
+                        console.log("success");
+                    }
+                });
+            }
+        );
     }
 </script>
 
 <div class="text-center">
     <form id="main" method="post">
         @Html.AntiForgeryToken()
-        <a href="" data-ajax="true" data-ajax-url="/index/partial" data-ajax-update="#panel">Click here</a>
+        <a href="" data-ajax="true" data-ajax-url="/" data-ajax-update="#panel">Click here</a>
         <div id="panel">
             <img id="appFace" src="@ViewData["ImgSrc"]" />
         </div>

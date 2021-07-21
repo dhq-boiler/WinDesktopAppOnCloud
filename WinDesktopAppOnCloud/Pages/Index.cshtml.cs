@@ -98,9 +98,27 @@ namespace WinDesktopAppOnCloud.Pages
             }
 
             //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            SendMessage(_process.MainWindowHandle.ToInt32(), WM_MOUSEMOVE, 0x0, PointToParam(JsonToPoint()));
+            Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={JsonToPoint()}");
+            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, new IntPtr(PointToParam(JsonToPoint())));
+        }
 
-            StartDesktopAppProcessAndPrintScreen();
+        public void OnPostSetCapture()
+        {
+            if (_process == null)
+            {
+                _process = Process.GetProcessesByName("boilersGraphics").First();
+            }
+
+            Trace.WriteLine("SetCapture");
+
+            SetCapture(_process.MainWindowHandle);
+        }
+
+        public void OnPostReleaseCapture()
+        {
+            Trace.WriteLine("ReleaseCapture");
+
+            ReleaseCapture();
         }
 
         private int PointToParam(Point point)
@@ -164,8 +182,18 @@ namespace WinDesktopAppOnCloud.Pages
         private extern static bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
 
         //送信するためのメソッド(文字も可能)
-        [DllImport("User32.dll", EntryPoint = "SendMessage")]
-        public static extern Int32 SendMessage(Int32 hWnd, Int32 Msg, Int32 wParam, Int32 lParam);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, IntPtr lParam);
+
+        [return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool PostMessage(IntPtr hWnd, IntPtr wMsg, IntPtr wParam, ref IntPtr lParam);
+        
+        [DllImport("user32.dll")]
+        static extern IntPtr SetCapture(IntPtr hWnd);
+        
+        [DllImport("user32.dll")]
+        static extern bool ReleaseCapture();
 
         public const int WM_MOUSEMOVE = 0x0200;
         public const int WM_LBUTTONDOWN = 0x201;
