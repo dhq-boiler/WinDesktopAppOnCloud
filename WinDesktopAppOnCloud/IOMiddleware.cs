@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 namespace WinDesktopAppOnCloud
 {
     //https://newbedev.com/how-to-log-the-http-response-body-in-asp-net-core-1-0
+    //の記事中のコードを改変して実装
     public class IOMiddleware
     {
         private readonly RequestDelegate _next;
