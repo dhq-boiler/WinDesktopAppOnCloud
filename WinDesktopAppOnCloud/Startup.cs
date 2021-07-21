@@ -57,12 +57,13 @@ namespace WinDesktopAppOnCloud
 
             app.UseAuthorization();
 
+            app.UseMiddleware<IOMiddleware>();
+
             app.UseSession();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
             });
-
         }
     }
 }

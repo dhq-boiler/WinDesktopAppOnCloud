@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace WinDesktopAppOnCloud.Pages
 {
@@ -97,23 +98,25 @@ namespace WinDesktopAppOnCloud.Pages
             }
 
             //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, PointToParam(JsonToPoint()));
+            SendMessage(_process.MainWindowHandle.ToInt32(), WM_MOUSEMOVE, 0x0, PointToParam(JsonToPoint()));
 
             StartDesktopAppProcessAndPrintScreen();
         }
 
-        private uint PointToParam(Point point)
+        private int PointToParam(Point point)
         {
-            return (uint)((int)point.X << 8 & (int)point.Y);
+            return (int)point.X << 16 | (int)point.Y;
         }
 
         private Point JsonToPoint()
         {
             StreamReader reader = new StreamReader(Response.Body);
-            var obj = JsonConvert.DeserializeObject(reader.ReadToEnd());
+            Response.Body.Seek(0, SeekOrigin.Begin);
+            string str = reader.ReadToEnd();
+            var dict = HttpUtility.ParseQueryString(str);
             var point = new Point();
-            //TODO point.X = obj.X;
-            //TODO point.Y = obj.Y;
+            point.X = int.Parse(dict["x"]);
+            point.Y = int.Parse(dict["y"]);
             return point;
         }
 
@@ -162,7 +165,7 @@ namespace WinDesktopAppOnCloud.Pages
 
         //送信するためのメソッド(文字も可能)
         [DllImport("User32.dll", EntryPoint = "SendMessage")]
-        public static extern long SendMessage(IntPtr hWnd, uint Msg, uint wParam, uint lParam);
+        public static extern Int32 SendMessage(Int32 hWnd, Int32 Msg, Int32 wParam, Int32 lParam);
 
         public const int WM_MOUSEMOVE = 0x0200;
         public const int WM_LBUTTONDOWN = 0x201;
