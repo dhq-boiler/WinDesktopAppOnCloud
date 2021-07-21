@@ -61,12 +61,6 @@ namespace WinDesktopAppOnCloud
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
-                endpoints.MapPost("/", async context =>
-                {
-                    int x = int.Parse(context.Request.Form["X"]);
-                    int y = int.Parse(context.Request.Form["Y"]);
-                    await context.Response.WriteAsJsonAsync(new { X = x, Y = y });
-                });
             });
 
         }

@@ -27,10 +27,12 @@
     }
 </script>
 
-@Html.AntiForgeryToken()
 <div class="text-center">
-    <a href="" data-ajax="true" data-ajax-url="/index/partial" data-ajax-update="#panel">Click here</a>
-    <div id="panel">
-        <img id="appFace" src="@ViewData["ImgSrc"]" />
-    </div>
+    <form id="main" method="post">
+        @Html.AntiForgeryToken()
+        <a href="" data-ajax="true" data-ajax-url="/index/partial" data-ajax-update="#panel">Click here</a>
+        <div id="panel">
+            <img id="appFace" src="@ViewData["ImgSrc"]" />
+        </div>
+    </form>
 </div>

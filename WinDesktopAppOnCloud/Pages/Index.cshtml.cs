@@ -91,8 +91,15 @@ namespace WinDesktopAppOnCloud.Pages
 
         public void OnPost()
         {
+            if (_process == null)
+            {
+                _process = Process.GetProcessesByName("boilersGraphics").First();
+            }
+
             //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
             SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, PointToParam(JsonToPoint()));
+
+            StartDesktopAppProcessAndPrintScreen();
         }
 
         private uint PointToParam(Point point)
