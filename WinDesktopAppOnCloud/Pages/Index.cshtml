@@ -7,8 +7,8 @@
 <script type="text/javascript">
     window.onload = function () {
         $('#appFace').on('mousemove', function (e) {
-            var mX = e.pageX;
-            var mY = e.pageY;
+            var mX = e.offsetX;
+            var mY = e.offsetY;
             $.ajax({
                 type: "POST",
                 url: "/",
