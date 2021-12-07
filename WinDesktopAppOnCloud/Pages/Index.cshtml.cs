@@ -153,9 +153,9 @@ namespace WinDesktopAppOnCloud.Pages
             }
 
             //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            //Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={JsonToPoint()}");
-            //SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, new IntPtr(PointToParam(JsonToPoint())));
-            //PrintScreen();
+            Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={JsonToPoint()}");
+            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, new IntPtr(PointToParam(JsonToPoint())));
+            PrintScreen();
         }
 
         public void OnPostSetCapture()
