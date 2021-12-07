@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -42,6 +43,13 @@ namespace WinDesktopAppOnCloud.Pages
 
         private void StartDesktopAppProcessAndPrintScreen()
         {
+            StartDesktopAppProcess();
+
+            PrintScreen();
+        }
+
+        private void StartDesktopAppProcess()
+        {
             if (PrevInstance() == false)
             {
                 var app = new ProcessStartInfo();
@@ -49,7 +57,10 @@ namespace WinDesktopAppOnCloud.Pages
                 _process = Process.Start(app);
                 Thread.Sleep(1000);
             }
+        }
 
+        private void PrintScreen()
+        {
             if (_process == null)
             {
                 _process = Process.GetProcessesByName("boilersGraphics").First();
@@ -90,33 +101,85 @@ namespace WinDesktopAppOnCloud.Pages
             ViewData["ImgSrc"] = String.Format("data:image/jpeg;base64,{0}", Convert.ToBase64String(array));
         }
 
-        public void OnPost()
+        private byte[] PrintScreenAsByteArray()
         {
+            if (_process == null)
+            {
+                _process = Process.GetProcessesByName("boilersGraphics").First();
+            }
+
+            IntPtr hWnd = _process.MainWindowHandle;
+            while (hWnd == IntPtr.Zero)
+            {
+                _process.Refresh();
+                hWnd = _process.MainWindowHandle;
+            }
+            IntPtr winDC = GetWindowDC(hWnd);
+            //ウィンドウの大きさを取得
+            RECT winRect = new RECT();
+            GetWindowRect(hWnd, ref winRect);
+            //Bitmapの作成
+            Bitmap bmp = new Bitmap(winRect.right - winRect.left,
+                winRect.bottom - winRect.top);
+            //Graphicsの作成
+            Graphics g = Graphics.FromImage(bmp);
+            //Graphicsのデバイスコンテキストを取得
+            IntPtr hDC = g.GetHdc();
+
+            PrintWindow(hWnd, hDC, 0);
+            //Bitmapに画像をコピーする
+            BitBlt(hDC, 0, 0, bmp.Width, bmp.Height,
+                winDC, 0, 0, SRCCOPY);
+            //解放
+            g.ReleaseHdc(hDC);
+            g.Dispose();
+            ReleaseDC(hWnd, winDC);
+
+            MemoryStream ms = new MemoryStream();
+            bmp.Save(ms, ImageFormat.Jpeg);
+            var array = ms.ToArray();
+            ms.Close();
+
+            return array;
+        }
+
+        public void OnPostMouseMove()
+        {
+            StartDesktopAppProcess();
+
             if (_process == null)
             {
                 _process = Process.GetProcessesByName("boilersGraphics").First();
             }
 
             //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={JsonToPoint()}");
-            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, new IntPtr(PointToParam(JsonToPoint())));
+            //Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={JsonToPoint()}");
+            //SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, new IntPtr(PointToParam(JsonToPoint())));
+            //PrintScreen();
         }
 
         public void OnPostSetCapture()
         {
+            StartDesktopAppProcess();
+
             if (_process == null)
             {
                 _process = Process.GetProcessesByName("boilersGraphics").First();
             }
 
-            Trace.WriteLine("SetCapture");
+            //Trace.WriteLine("SetCapture");
 
             SetCapture(_process.MainWindowHandle);
         }
 
+        public ActionResult ShowImage()
+        {
+            return File(PrintScreenAsByteArray(), "image/jpeg");
+        }
+
         public void OnPostReleaseCapture()
         {
-            Trace.WriteLine("ReleaseCapture");
+            //Trace.WriteLine("ReleaseCapture");
 
             ReleaseCapture();
         }

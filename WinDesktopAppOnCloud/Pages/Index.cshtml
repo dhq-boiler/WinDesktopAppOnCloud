@@ -6,12 +6,15 @@
 
 <script type="text/javascript">
     window.onload = function () {
+        $('#appFace').on('click', function (e) {
+            console.log("click success");
+        });
         $('#appFace').on('mousemove', function (e) {
             var mX = e.offsetX;
             var mY = e.offsetY;
             $.ajax({
                 type: "POST",
-                url: "/",
+                url: "/?handler=MouseMove",
                 cache: false,
                 dataType: "json",
                 data: { x: mX, y: mY },
@@ -20,7 +23,10 @@
                     xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
                 },
                 success: function (data) {
-                    console.log("success");
+                    console.log("MouseMove success");
+                },
+                error: function (xhr) {
+                    alert(xhr.toString());
                 }
             });
         });
@@ -37,7 +43,7 @@
                         xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
                     },
                     success: function (data) {
-                        console.log("success");
+                        console.log("SetCapture success");
                     }
                 });
             },
@@ -53,7 +59,7 @@
                         xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
                     },
                     success: function (data) {
-                        console.log("success");
+                        console.log("ReleaseCapture success");
                     }
                 });
             }
@@ -66,7 +72,7 @@
         @Html.AntiForgeryToken()
         <a href="" data-ajax="true" data-ajax-url="/" data-ajax-update="#panel">Click here</a>
         <div id="panel">
-            <img id="appFace" src="@ViewData["ImgSrc"]" />
+            <img id="appFace" src='@ViewData["ImgSrc"]' />
         </div>
     </form>
 </div>
