@@ -17,13 +17,13 @@
                 url: "/?handler=MouseMove",
                 cache: false,
                 dataType: "json",
-                data: { x: mX, y: mY },
+                data: { x: mX, y: mY, src: "@ViewData["ImgSrc"]" },
                 async: false,
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
                 },
                 success: function (data) {
-                    console.log("MouseMove success");
+                    $("#appFace").attr("src", data.src);
                 },
                 error: function (jqxhr, status, exception) {
                     console.debug('jqxhr', jqxhr);
