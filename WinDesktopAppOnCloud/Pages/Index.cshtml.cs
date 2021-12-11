@@ -11,6 +11,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -143,7 +144,13 @@ namespace WinDesktopAppOnCloud.Pages
             return array;
         }
 
-        public void OnPostMouseMove()
+        public IActionResult OnPostSetPoint(int x, int y)
+        {
+            var data = new Dictionary<string, string>() { { "x", x.ToString() }, { "y", y.ToString() } };
+            return new JsonResult(data);
+        }
+
+        public IActionResult OnPostMouseMove(int x, int y)
         {
             StartDesktopAppProcess();
 
@@ -151,11 +158,16 @@ namespace WinDesktopAppOnCloud.Pages
             {
                 _process = Process.GetProcessesByName("boilersGraphics").First();
             }
-
+            var point = new Point(x, y);
             //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={JsonToPoint()}");
-            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0, new IntPtr(PointToParam(JsonToPoint())));
+            Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={point}");
+            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0000, new IntPtr(PointToParam(point)));
+            //PostMessage(new HandleRef(null, _process.MainWindowHandle), WM_MOUSEMOVE, (IntPtr)0, (IntPtr)PointToParam(point));
+            ShowIfError();
+            
             PrintScreen();
+            var data = new Dictionary<string, string>() { { "src", ViewData["ImgSrc"].ToString() } };
+            return new JsonResult(data);
         }
 
         public void OnPostSetCapture()
@@ -184,22 +196,54 @@ namespace WinDesktopAppOnCloud.Pages
             ReleaseCapture();
         }
 
-        private int PointToParam(Point point)
+        public void OnPostShutDown()
         {
-            return (int)point.X << 16 | (int)point.Y;
+            if (_process != null)
+                _process.Kill();
         }
 
-        private Point JsonToPoint()
+        private int PointToParam(Point point)
         {
-            StreamReader reader = new StreamReader(Response.Body);
-            Response.Body.Seek(0, SeekOrigin.Begin);
-            string str = reader.ReadToEnd();
-            var dict = HttpUtility.ParseQueryString(str);
-            var point = new Point();
-            point.X = int.Parse(dict["x"]);
-            point.Y = int.Parse(dict["y"]);
-            return point;
+            return (int)point.Y << 16 | (int)point.X & 0xFFFF;
         }
+
+        private void ShowIfError()
+        {
+            var errorCode = Marshal.GetLastWin32Error();
+            if (errorCode != 0)
+            {
+                StringBuilder message = new StringBuilder(255);
+                FormatMessage(
+                  FORMAT_MESSAGE_FROM_SYSTEM,
+                  IntPtr.Zero,
+                  (uint)errorCode,
+                  0,
+                  message,
+                  message.Capacity,
+                  IntPtr.Zero);
+                _logger.LogError(message.ToString());
+            }
+            else
+            {
+                StringBuilder message = new StringBuilder(255);
+                FormatMessage(
+                  FORMAT_MESSAGE_FROM_SYSTEM,
+                  IntPtr.Zero,
+                  (uint)errorCode,
+                  0,
+                  message,
+                  message.Capacity,
+                  IntPtr.Zero);
+                _logger.LogInformation(message.ToString());
+            }
+        }
+
+        [DllImport("kernel32.dll")]
+        public static extern uint FormatMessage(uint dwFlags, IntPtr lpSource,
+                                                uint dwMessageId, uint dwLanguageId,
+                                                StringBuilder lpBuffer, int nSize,
+                                                IntPtr Arguments);
+        public const uint FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000;
 
         private const int SRCCOPY = 13369376;
         private const int CAPTUREBLT = 1073741824;
@@ -245,13 +289,13 @@ namespace WinDesktopAppOnCloud.Pages
         private extern static bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
 
         //送信するためのメソッド(文字も可能)
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true )]
         public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, IntPtr lParam);
 
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern bool PostMessage(IntPtr hWnd, IntPtr wMsg, IntPtr wParam, ref IntPtr lParam);
-        
+        static extern bool PostMessage(HandleRef hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
         [DllImport("user32.dll")]
         static extern IntPtr SetCapture(IntPtr hWnd);
         
@@ -262,5 +306,6 @@ namespace WinDesktopAppOnCloud.Pages
         public const int WM_LBUTTONDOWN = 0x201;
         public const int WM_LBUTTONUP = 0x202;
         public const int MK_LBUTTON = 0x0001;
+        public const int WM_MOUSEHOVER = 0x02A1;
     }
 }

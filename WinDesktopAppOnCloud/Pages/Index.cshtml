@@ -14,16 +14,33 @@
             var mY = e.offsetY;
             $.ajax({
                 type: "POST",
-                url: "/?handler=MouseMove",
+                url: "/?handler=SetPoint&x=" + mX + "&y=" + mY,
                 cache: false,
-                dataType: "json",
-                data: { x: mX, y: mY, src: "@ViewData["ImgSrc"]" },
                 async: false,
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
                 },
                 success: function (data) {
-                    $("#appFace").attr("src", data.src);
+                    console.log(data);
+                    console.log("SetPoint success");
+                    $.ajax({
+                        type: "POST",
+                        url: "/?handler=MouseMove&x=" + mX + "&y=" + mY,
+                        cache: false,
+                        async: false,
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+                        },
+                        success: function (data) {
+                            $("#appFace").attr("src", data.src);
+                            console.log("rendered");
+                        },
+                        error: function (jqxhr, status, exception) {
+                            console.debug('jqxhr', jqxhr);
+                            console.debug('status', status);
+                            console.debug('exception', exception);
+                        }
+                    });
                 },
                 error: function (jqxhr, status, exception) {
                     console.debug('jqxhr', jqxhr);
@@ -31,6 +48,7 @@
                     console.debug('exception', exception);
                 }
             });
+            
         });
         $('#appFace').hover(
             function (e) {
@@ -39,7 +57,7 @@
                     url: "/?handler=SetCapture",
                     cache: false,
                     dataType: "json",
-                    data: { },
+                    data: {},
                     async: false,
                     beforeSend: function (xhr) {
                         xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
@@ -55,7 +73,7 @@
                     url: "/?handler=ReleaseCapture",
                     cache: false,
                     dataType: "json",
-                    data: { },
+                    data: {},
                     async: false,
                     beforeSend: function (xhr) {
                         xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
@@ -66,6 +84,24 @@
                 });
             }
         );
+    }
+    //window.onbeforeunload = function () {
+    //    return 'Are you sure you want to leave?';
+    //}
+    window.onunload = function () {
+        $.ajax({
+            type: "POST",
+            url: "/?handler=ShutDown",
+            cache: false,
+            async: true,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            success: function (data) {
+                console.log("ShutDown success");
+            }
+        });
+        console.log("aa");
     }
 </script>
 
