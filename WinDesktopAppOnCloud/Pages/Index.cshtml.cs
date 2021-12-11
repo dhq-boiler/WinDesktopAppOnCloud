@@ -150,6 +150,22 @@ namespace WinDesktopAppOnCloud.Pages
             return new JsonResult(data);
         }
 
+        public void OnPostClick(int x, int y)
+        {
+            StartDesktopAppProcess();
+
+            if (_process == null)
+            {
+                _process = Process.GetProcessesByName("boilersGraphics").First();
+            }
+
+            var point = new Point(x, y);
+            PostMessage(_process.MainWindowHandle, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), new IntPtr(PointToParam(point)));
+            ShowIfError();
+            PostMessage(_process.MainWindowHandle, WM_LBUTTONUP, new IntPtr(MK_LBUTTON), new IntPtr(PointToParam(point)));
+            ShowIfError();
+        }
+
         public IActionResult OnPostMouseMove(int x, int y)
         {
             StartDesktopAppProcess();
@@ -159,11 +175,14 @@ namespace WinDesktopAppOnCloud.Pages
                 _process = Process.GetProcessesByName("boilersGraphics").First();
             }
             var point = new Point(x, y);
-            //PostMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            Trace.WriteLine($"PostMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={point}");
-            PostMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0, new POINT() { x = (short)point.X, y = (short)point.Y });
+
+            SendMessage(_process.MainWindowHandle, WM_NCHITTEST, 0, PointToParam(point));
             ShowIfError();
-            
+            SendMessage(_process.MainWindowHandle, WM_SETCURSOR, _process.MainWindowHandle, new IntPtr(WM_MOUSEMOVE << 16 | HTCLIENT));
+            ShowIfError();
+            PostMessage(_process.MainWindowHandle, WM_MOUSEMOVE, IntPtr.Zero, new IntPtr(PointToParam(point)));
+            ShowIfError();
+
             PrintScreen();
             var data = new Dictionary<string, string>() { { "src", ViewData["ImgSrc"].ToString() } };
             return new JsonResult(data);
@@ -303,13 +322,19 @@ namespace WinDesktopAppOnCloud.Pages
         
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int SendMessage(IntPtr hWnd, int mssg, int wParam, int lParam);
-        
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int SendMessage(IntPtr hWnd, int mssg, IntPtr wParam, IntPtr lParam);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int PostMessage(IntPtr hWnd, int mssg, int wParam, POINT lParam);
-        
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int PostMessage(IntPtr hWnd, int mssg, int wParam, int lParam);
-        
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int PostMessage(IntPtr hWnd, int mssg, IntPtr wParam, IntPtr lParam);
+
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool PostMessage(HandleRef hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
@@ -320,10 +345,172 @@ namespace WinDesktopAppOnCloud.Pages
         [DllImport("user32.dll")]
         static extern bool ReleaseCapture();
 
+        [DllImport("user32.dll")]
+        public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+        [DllImport("user32.dll")]
+        public static extern bool UpdateWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr hWndChildAfter, string className, string windowTitle);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr GetWindow(IntPtr hWnd, GetWindowType uCmd);
+
+        [DllImport("user32.dll")]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetActiveWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetFocus(IntPtr hWnd);
+
+        public const int SW_SHOW = 5;
+
+        public enum GetWindowType : uint
+        {
+            /// <summary>
+            /// The retrieved handle identifies the window of the same type that is highest in the Z order.
+            /// <para/>
+            /// If the specified window is a topmost window, the handle identifies a topmost window.
+            /// If the specified window is a top-level window, the handle identifies a top-level window.
+            /// If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDFIRST = 0,
+            /// <summary>
+            /// The retrieved handle identifies the window of the same type that is lowest in the Z order.
+            /// <para />
+            /// If the specified window is a topmost window, the handle identifies a topmost window.
+            /// If the specified window is a top-level window, the handle identifies a top-level window.
+            /// If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDLAST = 1,
+            /// <summary>
+            /// The retrieved handle identifies the window below the specified window in the Z order.
+            /// <para />
+            /// If the specified window is a topmost window, the handle identifies a topmost window.
+            /// If the specified window is a top-level window, the handle identifies a top-level window.
+            /// If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDNEXT = 2,
+            /// <summary>
+            /// The retrieved handle identifies the window above the specified window in the Z order.
+            /// <para />
+            /// If the specified window is a topmost window, the handle identifies a topmost window.
+            /// If the specified window is a top-level window, the handle identifies a top-level window.
+            /// If the specified window is a child window, the handle identifies a sibling window.
+            /// </summary>
+            GW_HWNDPREV = 3,
+            /// <summary>
+            /// The retrieved handle identifies the specified window's owner window, if any.
+            /// </summary>
+            GW_OWNER = 4,
+            /// <summary>
+            /// The retrieved handle identifies the child window at the top of the Z order,
+            /// if the specified window is a parent window; otherwise, the retrieved handle is NULL.
+            /// The function examines only child windows of the specified window. It does not examine descendant windows.
+            /// </summary>
+            GW_CHILD = 5,
+            /// <summary>
+            /// The retrieved handle identifies the enabled popup window owned by the specified window (the
+            /// search uses the first such window found using GW_HWNDNEXT); otherwise, if there are no enabled
+            /// popup windows, the retrieved handle is that of the specified window.
+            /// </summary>
+            GW_ENABLEDPOPUP = 6
+        }
+
         public const int WM_MOUSEMOVE = 0x0200;
         public const int WM_LBUTTONDOWN = 0x201;
         public const int WM_LBUTTONUP = 0x202;
-        public const int MK_LBUTTON = 0x0001;
         public const int WM_MOUSEHOVER = 0x02A1;
+        public const int WM_SETCURSOR = 0x0020;
+        public const int WM_NCHITTEST = 0x0084;
+
+        public const int MK_CONTROL = 0x0008;
+        public const int MK_LBUTTON = 0x0001;
+        public const int MK_MBUTTON = 0x0010;
+        public const int MK_RBUTTON = 0x0002;
+        public const int MK_SHIFT = 0x0004;
+        public const int MK_XBUTTON1 = 0x0020;
+        public const int MK_XBUTTON2 = 0x0040;
+
+        /// <summary>
+        /// サイズ変更境界線を持つウィンドウの境界線内。
+        /// </summary>
+        public const int HTBORDER = 18;
+
+        /// <summary>
+        /// サイズ変更可能なウィンドウの下向き境界線(ユーザーはマウスをクリックしてウィンドウの垂直方向のサイズを変更できます)。
+        /// </summary>
+        public const int HTBOTTOM = 15;
+
+        /// <summary>
+        /// サイズ変更可能なウィンドウの境界線の左下隅(ユーザーはマウスをクリックして、ウィンドウの対角線のサイズを変更できます)。
+        /// </summary>
+        public const int HTBOTTOMLEFT = 16;
+
+        /// <summary>
+        /// サイズ変更可能なウィンドウの境界線の右下隅(ユーザーはマウスをクリックして、ウィンドウの斜め方向のサイズを変更できます)。
+        /// </summary>
+        public const int HTBOTTOMRIGHT = 17;
+
+        /// <summary>
+        /// タイトル バー内。
+        /// </summary>        public const int HTAPTION = 2;
+
+        /// <summary>
+        /// クライアント領域内。
+        /// </summary>        public const int HTCLIENT = 1;
+
+        /// <summary>
+        /// [閉じる]ボタン をクリックします。
+        /// </summary>        public const int LOSE = 20;
+
+        /// <summary>
+        /// 画面の背景またはウィンドウ間の分割線(HTNOWHERE と同じ) で 、DefWindowProc 関数がエラーを示すシステム ビープ音を生成する場合を除きます。
+        /// </summary>        public const int HTERROR = -2;
+
+        /// <summary>
+        /// サイズ ボックス内(HTSIZE と同じ)。
+        /// </summary>        public const int HTGROWBOX = 4;        /// <summary>
+        /// [ヘルプ] ボタン 。
+        /// </summary>        public const int HTHELP = 21;                /// <summary>
+        /// 水平スクロール バー内。
+        /// </summary>        public const int HTHSCROLL = 6;                /// <summary>
+        /// サイズ変更可能なウィンドウの左側の境界線(ユーザーはマウスをクリックしてウィンドウの水平方向のサイズを変更できます)。
+        /// </summary>        public const int HTLEFT = 10;                /// <summary>
+        /// メニュー内。
+        /// </summary>        public const int HTMENU = 5;                /// <summary>
+        /// [最大化]ボタン をクリックします。
+        /// </summary>        public const int HTMAXBUTTON = 9;                /// <summary>
+        /// [最小化]ボタン をクリックします。
+        /// </summary>        public const int HTMINBUTTON = 8;               /// <summary>
+        /// 画面の背景またはウィンドウ間の分割線。
+        /// </summary>        public const int HTNOWHERE = 0;                /// <summary>
+        /// [最小化]ボタン をクリックします。
+        /// </summary>        public const int HTREDUCE = 8;                /// <summary>
+        /// サイズ変更可能なウィンドウの右側の境界線(ユーザーはマウスをクリックしてウィンドウの水平方向のサイズを変更できます)。
+        /// </summary>        public const int HTRIGHT = 11;                /// <summary>
+        /// サイズ ボックス内(HTGROWBOX と同じ)。
+        /// </summary>        public const int HTSIZE = 4;                /// <summary>
+        /// ウィンドウ メニューまたは子ウィンドウの[閉じる] ボタン。
+        /// </summary>        public const int HTSYSMENU = 3;                /// <summary>
+        /// ウィンドウの上方向の境界線。
+        /// </summary>        public const int HTTOP = 12;                /// <summary>
+        /// ウィンドウの境界線の左上隅。
+        /// </summary>        public const int HTTOPLEFT = 13;                /// <summary>
+        /// ウィンドウの境界線の右上隅。
+        /// </summary>        public const int HTTOPRIGHT = 14;                /// <summary>
+        /// 同じスレッド内の別のウィンドウで現在カバーされているウィンドウでは(メッセージは、そのうちの 1 つが HTTRANSPARENT ではないコードを返すまで、同じスレッド内の基になるウィンドウに送信されます)。
+        /// </summary>        public const int HTTRANSPARENT = -1;                /// <summary>
+        /// 垂直スクロール バー内。
+        /// </summary>        public const int HTVSCROLL = 7;                /// <summary>
+        /// [最大化]ボタン をクリックします。
+        /// </summary>        public const int HTZOOM = 9;
     }
 }

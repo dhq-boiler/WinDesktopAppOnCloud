@@ -7,7 +7,20 @@
 <script type="text/javascript">
     window.onload = function () {
         $('#appFace').on('click', function (e) {
-            console.log("click success");
+            var mX = e.offsetX;
+            var mY = e.offsetY;
+            $.ajax({
+                type: "POST",
+                url: "/?handler=Click&x=" + mX + "&y=" + mY,
+                cache: false,
+                async: false,
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("XSRF-TOKEN", $('input:hidden[name="__RequestVerificationToken"]').val());
+                },
+                success: function (data) {
+                    console.log("click success");
+                }
+            });
         });
         $('#appFace').on('mousemove', function (e) {
             var mX = e.offsetX;
