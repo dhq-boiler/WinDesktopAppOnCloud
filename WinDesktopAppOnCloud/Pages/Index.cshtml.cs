@@ -160,7 +160,7 @@ namespace WinDesktopAppOnCloud.Pages
             }
             var point = new Point(x, y);
             //PostMessageでマウスポインタが移動したことをDesktopApp側に伝える
-            Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={point}");
+            Trace.WriteLine($"PostMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={point}");
             PostMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0, new POINT() { x = (short)point.X, y = (short)point.Y });
             ShowIfError();
             
