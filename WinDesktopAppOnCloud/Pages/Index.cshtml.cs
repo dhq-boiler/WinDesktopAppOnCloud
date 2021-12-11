@@ -176,7 +176,7 @@ namespace WinDesktopAppOnCloud.Pages
             }
             var point = new Point(x, y);
 
-            SendMessage(_process.MainWindowHandle, WM_NCHITTEST, 0, PointToParam(point));
+            SendMessage(_process.MainWindowHandle, WM_NCHITTEST, IntPtr.Zero, new IntPtr(PointToParam(point)));
             ShowIfError();
             SendMessage(_process.MainWindowHandle, WM_SETCURSOR, _process.MainWindowHandle, new IntPtr(WM_MOUSEMOVE << 16 | HTCLIENT));
             ShowIfError();
