@@ -461,56 +461,112 @@ namespace WinDesktopAppOnCloud.Pages
 
         /// <summary>
         /// タイトル バー内。
-        /// </summary>        public const int HTAPTION = 2;
+        /// </summary>
+        public const int HTAPTION = 2;
 
         /// <summary>
         /// クライアント領域内。
-        /// </summary>        public const int HTCLIENT = 1;
+        /// </summary>
+        public const int HTCLIENT = 1;
 
         /// <summary>
         /// [閉じる]ボタン をクリックします。
-        /// </summary>        public const int LOSE = 20;
+        /// </summary>
+        public const int LOSE = 20;
 
         /// <summary>
         /// 画面の背景またはウィンドウ間の分割線(HTNOWHERE と同じ) で 、DefWindowProc 関数がエラーを示すシステム ビープ音を生成する場合を除きます。
-        /// </summary>        public const int HTERROR = -2;
+        /// </summary>
+        public const int HTERROR = -2;
 
         /// <summary>
         /// サイズ ボックス内(HTSIZE と同じ)。
-        /// </summary>        public const int HTGROWBOX = 4;        /// <summary>
+        /// </summary>
+        public const int HTGROWBOX = 4;
+
+        /// <summary>
         /// [ヘルプ] ボタン 。
-        /// </summary>        public const int HTHELP = 21;                /// <summary>
+        /// </summary>
+        public const int HTHELP = 21;
+        
+        /// <summary>
         /// 水平スクロール バー内。
-        /// </summary>        public const int HTHSCROLL = 6;                /// <summary>
+        /// </summary>
+        public const int HTHSCROLL = 6;
+        
+        /// <summary>
         /// サイズ変更可能なウィンドウの左側の境界線(ユーザーはマウスをクリックしてウィンドウの水平方向のサイズを変更できます)。
-        /// </summary>        public const int HTLEFT = 10;                /// <summary>
+        /// </summary>
+        public const int HTLEFT = 10;
+        
+        /// <summary>
         /// メニュー内。
-        /// </summary>        public const int HTMENU = 5;                /// <summary>
+        /// </summary>
+        public const int HTMENU = 5;
+        
+        /// <summary>
         /// [最大化]ボタン をクリックします。
-        /// </summary>        public const int HTMAXBUTTON = 9;                /// <summary>
+        /// </summary>
+        public const int HTMAXBUTTON = 9;
+        
+        /// <summary>
         /// [最小化]ボタン をクリックします。
-        /// </summary>        public const int HTMINBUTTON = 8;               /// <summary>
+        /// </summary>
+        public const int HTMINBUTTON = 8;
+       
+        /// <summary>
         /// 画面の背景またはウィンドウ間の分割線。
-        /// </summary>        public const int HTNOWHERE = 0;                /// <summary>
+        /// </summary>
+        public const int HTNOWHERE = 0;
+        
+        /// <summary>
         /// [最小化]ボタン をクリックします。
-        /// </summary>        public const int HTREDUCE = 8;                /// <summary>
+        /// </summary>
+        public const int HTREDUCE = 8;
+        
+        /// <summary>
         /// サイズ変更可能なウィンドウの右側の境界線(ユーザーはマウスをクリックしてウィンドウの水平方向のサイズを変更できます)。
-        /// </summary>        public const int HTRIGHT = 11;                /// <summary>
+        /// </summary>
+        public const int HTRIGHT = 11;
+        
+        /// <summary>
         /// サイズ ボックス内(HTGROWBOX と同じ)。
-        /// </summary>        public const int HTSIZE = 4;                /// <summary>
+        /// </summary>
+        public const int HTSIZE = 4;
+        
+        /// <summary>
         /// ウィンドウ メニューまたは子ウィンドウの[閉じる] ボタン。
-        /// </summary>        public const int HTSYSMENU = 3;                /// <summary>
+        /// </summary>
+        public const int HTSYSMENU = 3;
+        
+        /// <summary>
         /// ウィンドウの上方向の境界線。
-        /// </summary>        public const int HTTOP = 12;                /// <summary>
+        /// </summary>
+        public const int HTTOP = 12;
+        
+        /// <summary>
         /// ウィンドウの境界線の左上隅。
-        /// </summary>        public const int HTTOPLEFT = 13;                /// <summary>
+        /// </summary>
+        public const int HTTOPLEFT = 13;
+        
+        /// <summary>
         /// ウィンドウの境界線の右上隅。
-        /// </summary>        public const int HTTOPRIGHT = 14;                /// <summary>
+        /// </summary>
+        public const int HTTOPRIGHT = 14;
+        
+        /// <summary>
         /// 同じスレッド内の別のウィンドウで現在カバーされているウィンドウでは(メッセージは、そのうちの 1 つが HTTRANSPARENT ではないコードを返すまで、同じスレッド内の基になるウィンドウに送信されます)。
-        /// </summary>        public const int HTTRANSPARENT = -1;                /// <summary>
+        /// </summary>
+        public const int HTTRANSPARENT = -1;
+        
+        /// <summary>
         /// 垂直スクロール バー内。
-        /// </summary>        public const int HTVSCROLL = 7;                /// <summary>
+        /// </summary>
+        public const int HTVSCROLL = 7;
+        
+        /// <summary>
         /// [最大化]ボタン をクリックします。
-        /// </summary>        public const int HTZOOM = 9;
+        /// </summary>
+        public const int HTZOOM = 9;
     }
 }
