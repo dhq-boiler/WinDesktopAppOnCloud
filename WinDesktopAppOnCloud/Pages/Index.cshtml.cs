@@ -297,17 +297,22 @@ namespace WinDesktopAppOnCloud.Pages
         //送信するためのメソッド(文字も可能)
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true )]
         public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, IntPtr lParam);
+        
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int SendMessage(IntPtr hWnd, int mssg, int wParam, POINT lParam);
+        
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int SendMessage(IntPtr hWnd, int mssg, int wParam, int lParam);
+        
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int PostMessage(IntPtr hWnd, int mssg, int wParam, POINT lParam);
+        
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int PostMessage(IntPtr hWnd, int mssg, int wParam, int lParam);
+        
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        static extern bool PostMessage(HandleRef hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        public static extern bool PostMessage(HandleRef hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
         static extern IntPtr SetCapture(IntPtr hWnd);
