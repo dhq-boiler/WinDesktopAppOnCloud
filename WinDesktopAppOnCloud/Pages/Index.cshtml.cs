@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -13,8 +11,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 
 namespace WinDesktopAppOnCloud.Pages
 {
@@ -54,6 +50,7 @@ namespace WinDesktopAppOnCloud.Pages
             if (PrevInstance() == false)
             {
                 var app = new ProcessStartInfo();
+
                 app.FileName = @"Z:\Git\boilersGraphics\boilersGraphics\bin\Debug\boilersGraphics.exe"; //将来的にはビルドシステムも搭載して、GitHubからソースコードをクローンして自鯖でビルドしてオンラインデバッグできるようにする
                 _process = Process.Start(app);
                 Thread.Sleep(1000);
@@ -176,12 +173,24 @@ namespace WinDesktopAppOnCloud.Pages
             }
             var point = new Point(x, y);
 
+            SetForegroundWindow(_process.MainWindowHandle);
+            ShowIfError();
             SendMessage(_process.MainWindowHandle, WM_NCHITTEST, IntPtr.Zero, new IntPtr(PointToParam(point)));
             ShowIfError();
             SendMessage(_process.MainWindowHandle, WM_SETCURSOR, _process.MainWindowHandle, new IntPtr(WM_MOUSEMOVE << 16 | HTCLIENT));
             ShowIfError();
             PostMessage(_process.MainWindowHandle, WM_MOUSEMOVE, IntPtr.Zero, new IntPtr(PointToParam(point)));
             ShowIfError();
+
+            //var inputMouseMove = new ClickOnPointTool.INPUT();
+            //inputMouseMove.Type = 0; /// input type mouse
+            //inputMouseMove.Data.Mouse.X = x;
+            //inputMouseMove.Data.Mouse.Y = y;
+            //inputMouseMove.Data.Mouse.Flags = 0x0001; /// MOUSEEVENTF_MOVE Movement occurred
+
+            //var inputs = new ClickOnPointTool.INPUT[] { inputMouseMove };
+            //ClickOnPointTool.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(ClickOnPointTool.INPUT)));
+            //var wpfPoint = WriteMouseCoordinatesInWPFUnits(_process.MainWindowHandle);
 
             PrintScreen();
             var data = new Dictionary<string, string>() { { "src", ViewData["ImgSrc"].ToString() } };
@@ -350,6 +359,9 @@ namespace WinDesktopAppOnCloud.Pages
 
         [DllImport("user32.dll")]
         public static extern bool UpdateWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr hWndChildAfter, string className, string windowTitle);
@@ -568,5 +580,165 @@ namespace WinDesktopAppOnCloud.Pages
         /// [最大化]ボタン をクリックします。
         /// </summary>
         public const int HTZOOM = 9;
+
+        [Flags]
+        public enum MouseEventFlags
+        {
+            LeftDown = 0x00000002,
+            LeftUp = 0x00000004,
+            MiddleDown = 0x00000020,
+            MiddleUp = 0x00000040,
+            Move = 0x00000001,
+            Absolute = 0x00008000,
+            RightDown = 0x00000008,
+            RightUp = 0x00000010
+        }
+
+        [DllImport("user32.dll", EntryPoint = "SetCursorPos")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetCursorPos(int x, int y);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetCursorPos(out MousePoint lpMousePoint);
+
+        [DllImport("user32.dll")]
+        private static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
+
+        public static void SetCursorPosition(int x, int y)
+        {
+            SetCursorPos(x, y);
+        }
+
+        public static void SetCursorPosition(MousePoint point)
+        {
+            SetCursorPos(point.X, point.Y);
+        }
+
+        public static MousePoint GetCursorPosition()
+        {
+            MousePoint currentMousePoint;
+            var gotPoint = GetCursorPos(out currentMousePoint);
+            if (!gotPoint) { currentMousePoint = new MousePoint(0, 0); }
+            return currentMousePoint;
+        }
+
+        public static void MouseEvent(MouseEventFlags value)
+        {
+            MousePoint position = GetCursorPosition();
+
+            mouse_event
+                ((int)value,
+                 position.X,
+                 position.Y,
+                 0,
+                 0)
+                ;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MousePoint
+        {
+            public int X;
+            public int Y;
+
+            public MousePoint(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
+
+        public class ClickOnPointTool
+        {
+
+            [DllImport("user32.dll")]
+            static extern bool ClientToScreen(IntPtr hWnd, ref Point lpPoint);
+
+            [DllImport("user32.dll")]
+            internal static extern uint SendInput(uint nInputs, [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs, int cbSize);
+
+#pragma warning disable 649
+            internal struct INPUT
+            {
+                public UInt32 Type;
+                public MOUSEKEYBDHARDWAREINPUT Data;
+            }
+
+            [StructLayout(LayoutKind.Explicit)]
+            internal struct MOUSEKEYBDHARDWAREINPUT
+            {
+                [FieldOffset(0)]
+                public MOUSEINPUT Mouse;
+            }
+
+            internal struct MOUSEINPUT
+            {
+                public Int32 X;
+                public Int32 Y;
+                public UInt32 MouseData;
+                public UInt32 Flags;
+                public UInt32 Time;
+                public IntPtr ExtraInfo;
+            }
+
+#pragma warning restore 649
+
+
+            public static void ClickOnPoint(IntPtr wndHandle, Point clientPoint)
+            {
+                GetCursorPos(out var oldPos);
+
+                /// get screen coordinates
+                ClientToScreen(wndHandle, ref clientPoint);
+
+                /// set cursor on coords, and press mouse
+                SetCursorPos((int)clientPoint.X, (int)clientPoint.Y);
+
+                var inputMouseDown = new INPUT();
+                inputMouseDown.Type = 0; /// input type mouse
+                inputMouseDown.Data.Mouse.Flags = 0x0002; /// left button down
+
+                var inputMouseUp = new INPUT();
+                inputMouseUp.Type = 0; /// input type mouse
+                inputMouseUp.Data.Mouse.Flags = 0x0004; /// left button up
+
+                var inputs = new INPUT[] { inputMouseDown, inputMouseUp };
+                SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+
+                /// return mouse 
+                SetCursorPos((int)oldPos.X, (int)oldPos.Y);
+            }
+
+        }
+
+        [DllImport("gdi32.dll")]
+        static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
+        private Point ConvertPixelsToUnits(IntPtr hWnd, int x, int y)
+        {
+            // get the system DPI
+            IntPtr dDC = GetDC(hWnd); // Get desktop DC
+            int dpi = GetDeviceCaps(dDC, 88);
+            bool rv = ReleaseDC(hWnd, dDC).ToInt32() != 0;
+
+            // WPF's physical unit size is calculated by taking the 
+            // "Device-Independant Unit Size" (always 1/96)
+            // and scaling it by the system DPI
+            double physicalUnitSize = (1d / 96d) * (double)dpi;
+            Point wpfUnits = new Point(physicalUnitSize * (double)x,
+            physicalUnitSize * (double)y);
+
+            return wpfUnits;
+        }
+        private Point WriteMouseCoordinatesInWPFUnits(IntPtr hWnd)
+        {
+            if (GetCursorPos(out var p))
+            {
+                Point wpfPoint = ConvertPixelsToUnits(hWnd, p.X, p.Y);
+                return wpfPoint;
+            }
+            return null;
+        }
     }
 }
