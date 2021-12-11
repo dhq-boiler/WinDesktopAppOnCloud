@@ -159,10 +159,9 @@ namespace WinDesktopAppOnCloud.Pages
                 _process = Process.GetProcessesByName("boilersGraphics").First();
             }
             var point = new Point(x, y);
-            //SendMessageでマウスポインタが移動したことをDesktopApp側に伝える
+            //PostMessageでマウスポインタが移動したことをDesktopApp側に伝える
             Trace.WriteLine($"SendMessage hWnd={_process.MainWindowHandle}, Msg={WM_MOUSEMOVE}, wParam={0x0}, lParam={point}");
-            SendMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0x0000, new IntPtr(PointToParam(point)));
-            //PostMessage(new HandleRef(null, _process.MainWindowHandle), WM_MOUSEMOVE, (IntPtr)0, (IntPtr)PointToParam(point));
+            PostMessage(_process.MainWindowHandle, WM_MOUSEMOVE, 0, new POINT() { x = (short)point.X, y = (short)point.Y });
             ShowIfError();
             
             PrintScreen();
@@ -288,10 +287,24 @@ namespace WinDesktopAppOnCloud.Pages
         [DllImport("User32.dll")]
         private extern static bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
 
+        public struct POINT
+        {
+            public short x;
+            public short y;
+        };
+
+
         //送信するためのメソッド(文字も可能)
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true )]
         public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, IntPtr lParam);
-
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int SendMessage(IntPtr hWnd, int mssg, int wParam, POINT lParam);
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int SendMessage(IntPtr hWnd, int mssg, int wParam, int lParam);
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int PostMessage(IntPtr hWnd, int mssg, int wParam, POINT lParam);
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int PostMessage(IntPtr hWnd, int mssg, int wParam, int lParam);
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         static extern bool PostMessage(HandleRef hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
